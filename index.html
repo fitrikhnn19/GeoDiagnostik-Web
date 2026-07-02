@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoDiagnostik XI - Micro LMS</title>
+    
+    <!-- MathJax untuk Render Rumus -->
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/dist/tex-mml-chtml.js"></script>
+
+    <style>
+        /* ==========================================================================
+           1. DESAIN UI/UX GLOBAL (Navy Blue, Bersih, Profesional)
+           ========================================================================== */
+        :root {
+            --navy: #1e3a8a;
+            --blue: #3b82f6;
+            --light: #f3f4f6;
+            --dark: #1f2937;
+            --border: #d1d5db;
+            --red: #dc2626;
+            --green: #10b981;
+            --orange: #f59e0b;
+        }
+
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+
+        body { background-color: var(--light); color: var(--dark); margin: 0; padding: 16px; display: flex; justify-content: center; user-select: none; -webkit-user-select: none; }
+
+        .container-sm { width: 100%; max-width: 480px; margin: 0 auto; } /* Layout Siswa */
+        .container-lg { width: 100%; max-width: 800px; margin: 0 auto; } /* Layout Guru/Admin */
+
+        .card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .hidden { display: none !important; }
+
+        h2, h3 { color: var(--navy); margin-top: 0; }
+        
+        /* Header Logo */
+        .header-logo { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 20px; text-align: center; }
+        .header-logo img { height: 40px; object-fit: contain; }
+
+        /* Role Switcher */
+        .role-tabs { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 20px; }
+        .tab-btn { flex: 1; padding: 12px; background: none; border: none; font-size: 14px; font-weight: bold; color: #6b7280; cursor: pointer; }
+        .tab-btn.active { color: var(--navy); border-bottom: 3px solid var(--navy); }
+
+        /* Form & Input */
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: #4b5563; }
+        .input-group input, .input-group select, .input-group textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; }
+        .input-group textarea { resize: vertical; }
+
+        /* Buttons (Thumb-Friendly >= 44px) */
+        button.btn-main { width: 100%; min-height: 44px; background: var(--navy); color: #fff; border: none; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; transition: 0.2s; }
+        button.btn-main:hover { background: #1e3a8aef; }
+        button.btn-main:disabled { background: #9ca3af; cursor: not-allowed; }
+        button.btn-danger { background: var(--red); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        button.btn-success { background: var(--green); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+
+        /* Kuis 3-Tier */
+        .tier-box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+        .tier-title { font-weight: bold; color: var(--navy); font-size: 14px; margin-bottom: 10px; }
+        .radio-option { display: flex; align-items: center; min-height: 44px; padding: 8px 12px; margin: 6px 0; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; background: #fff; font-size: 14px; }
+        .radio-option:hover { background: #eff6ff; }
+        .radio-option input[type="radio"] { width: 20px; height: 20px; margin-right: 12px; }
+
+        /* Dasbor Guru & Admin */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .stat-box { background: #eff6ff; border: 1px solid #bfdbfe; padding: 15px; border-radius: 8px; text-align: center; }
+        .stat-box h4 { margin: 0 0 5px 0; font-size: 12px; color: #1e40af; }
+        .stat-box p { margin: 0; font-size: 24px; font-weight: bold; color: var(--navy); }
+        
+        .data-table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+        .data-table th, .data-table td { padding: 10px; border-bottom: 1px solid var(--border); }
+        .data-table th { background: #f9fafb; color: #4b5563; }
+        
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: #fff; }
+        .bg-blue { background: var(--blue); } .bg-red { background: var(--red); } .bg-green { background: var(--green); } .bg-orange { background: var(--orange); }
+
+        .result-item { border-left: 4px solid var(--navy); background: #f9fafb; padding: 12px; margin-bottom: 12px; border-radius: 0 8px 8px 0; }
+    </style>
+</head>
+<body>
+
+<div id="main-wrapper" class="container-sm">
+    
+    <!-- ==========================================================================
+         HALAMAN AUTENTIKASI (PILIH ROLE)
+         ========================================================================== -->
+    <div id="auth-screen" class="card">
+        <!-- Header Logos -->
+        <div class="header-logo">
+            <img src="logo ulm.webp" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/e/e9/Logo_Unlam.png'" alt="Logo ULM">
+            <div style="text-align: left;">
+                <h3 style="margin: 0; font-size: 18px;">GeoDiagnostik XI</h3>
+                <p style="margin: 0; font-size: 10px; font-weight: bold; color: #666;">MICRO-LMS SYSTEM</p>
+            </div>
+        </div>
+
+        <div class="role-tabs">
+            <button class="tab-btn active" onclick="switchRole('siswa')" id="tab-siswa">Siswa</button>
+            <button class="tab-btn" onclick="switchRole('guru')" id="tab-guru">Guru</button>
+            <button class="tab-btn" onclick="switchRole('admin')" id="tab-admin">Admin</button>
+        </div>
+
+        <!-- FORM SISWA -->
+        <div id="form-siswa">
+            <div style="text-align: center; margin-bottom: 15px;">
+                <img src="LOGO MAN2.jpg" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/4/41/Kementerian_Agama_Republik_Indonesia_Logo.png'" alt="Logo Sekolah" style="height: 50px;">
+            </div>
+            <div class="input-group">
+                <label>Nama Lengkap</label>
+                <input type="text" id="siswa-nama" placeholder="Contoh: Ahmad Fauzi">
+            </div>
+            <div class="input-group">
+                <label>NISN</label>
+                <input type="number" id="siswa-nisn" placeholder="Contoh: 00123456">
+            </div>
+            <div class="input-group">
+                <label>Kelas</label>
+                <select id="siswa-kelas"></select>
+            </div>
+            <div class="input-group">
+                <label>Token Ujian Aktif</label>
+                <input type="text" id="siswa-token" placeholder="Masukkan Token">
+            </div>
+            <button class="btn-main" onclick="loginSiswa()">Mulai Ujian</button>
+        </div>
+
+        <!-- FORM GURU -->
+        <div id="form-guru" class="hidden">
+            <p style="font-size: 13px; color: #666;">Silakan masuk untuk memantau kelas dan mengelola soal.</p>
+            <div class="input-group">
+                <label>Username Guru</label>
+                <input type="text" id="guru-user" placeholder="Contoh: guru_mat">
+            </div>
+            <div class="input-group">
+                <label>Kata Sandi</label>
+                <input type="password" id="guru-pass" placeholder="***">
+            </div>
+            <button class="btn-main" onclick="loginGuru()">Masuk Dasbor Guru</button>
+        </div>
+
+        <!-- FORM ADMIN -->
+        <div id="form-admin" class="hidden">
+            <p style="font-size: 13px; color: #666;">Akses Super Admin untuk manajemen basis data.</p>
+            <div class="input-group">
+                <label>Sandi Root (Bypass)</label>
+                <input type="password" id="admin-pass" placeholder="Default: admin123">
+            </div>
+            <button class="btn-main" onclick="loginAdmin()">Akses Root Web</button>
+        </div>
+    </div>
+
+
+    <!-- ==========================================================================
+         MODUL SISWA (UJIAN & HASIL)
+         ========================================================================== -->
+    <div id="siswa-quiz" class="card hidden">
+        <div style="display: flex; justify-content: space-between; border-bottom: 2px solid var(--light); padding-bottom: 10px; margin-bottom: 15px;">
+            <span style="font-weight: bold; color: var(--navy); font-size: 14px;" id="quiz-progress">Soal 1/10</span>
+            <span style="font-weight: bold; color: var(--red); font-size: 12px;" id="quiz-warning">Pelanggaran: 0/3</span>
+        </div>
+
+        <div id="quiz-question" style="font-size: 15px; margin-bottom: 20px; line-height: 1.5;"></div>
+
+        <div class="tier-box">
+            <div class="tier-title">Tier 1: Pilih Jawaban Hasil</div>
+            <div id="tier1-options"></div>
+        </div>
+
+        <div class="tier-box">
+            <div class="tier-title">Tier 2: Pilih Alasan Teoritis</div>
+            <div id="tier2-options"></div>
+        </div>
+
+        <div class="tier-box">
+            <div class="tier-title">Tier 3: Keyakinan Anda</div>
+            <div id="tier3-options">
+                <label class="radio-option"><input type="radio" name="t3" value="yakin" onchange="validateTier()"> Yakin</label>
+                <label class="radio-option"><input type="radio" name="t3" value="tidak_yakin" onchange="validateTier()"> Tidak Yakin</label>
+            </div>
+        </div>
+
+        <button class="btn-main" id="btn-next-soal" disabled onclick="nextSoal()">Simpan & Lanjut</button>
+    </div>
+
+    <div id="siswa-locked" class="card hidden" style="text-align: center; border: 3px solid var(--red);">
+        <h2 style="color: var(--red);">Sesi Terkunci!</h2>
+        <p>Anda terdeteksi berpindah aplikasi/tab lebih dari 3 kali. Hubungi Guru Pengawas untuk membuka kunci.</p>
+        <button class="btn-main" onclick="location.reload()" style="margin-top: 20px;">Kembali</button>
+    </div>
+
+    <div id="siswa-result" class="card hidden">
+        <h2>Ujian Selesai</h2>
+        <p style="font-size: 13px; color: #666;">Profil pemetaan kognitif Anda:</p>
+        <div id="result-content"></div>
+        <button class="btn-main" onclick="location.reload()" style="margin-top: 20px;">Selesai & Keluar</button>
+    </div>
+</div>
+
+
+<!-- ==========================================================================
+     MODUL GURU (DASHBOARD)
+     ========================================================================== -->
+<div id="guru-dashboard" class="container-lg hidden">
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--light); padding-bottom: 15px; margin-bottom: 20px;">
+            <h2 style="margin: 0;">Dasbor Guru Pengawas</h2>
+            <button class="btn-danger" onclick="location.reload()">Logout</button>
+        </div>
+
+        <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+            <div class="input-group" style="flex: 1; margin: 0;">
+                <label>Filter Pantauan Kelas</label>
+                <select id="guru-filter-kelas" onchange="renderLiveMonitor()"></select>
+            </div>
+            <div style="flex: 1; background: #fdf2f8; padding: 10px; border-radius: 8px; border: 1px solid #fbcfe8; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <span style="font-size: 11px; font-weight: bold; color: #9d174d; display: block;">STATUS TOKEN:</span>
+                    <span id="guru-token-display" style="font-size: 20px; font-weight: bold; color: var(--navy);">GEOM1</span>
+                </div>
+                <button id="btn-toggle-token" class="btn-danger" onclick="toggleToken()">Matikan</button>
+            </div>
+        </div>
+
+        <div class="stats-grid" id="guru-stats"></div>
+
+        <h3>Live Monitoring Siswa</h3>
+        <div style="overflow-x: auto;">
+            <table class="data-table">
+                <thead><tr><th>Nama Siswa</th><th>NISN</th><th>Kelas</th><th>Progres</th><th>Status Layar</th><th>Aksi</th></tr></thead>
+                <tbody id="guru-table-monitor"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- BANK SOAL MANAGER -->
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="margin: 0;">Manajemen Bank Soal 3-Tier</h3>
+            <button class="btn-success" onclick="document.getElementById('form-tambah-soal').classList.toggle('hidden')">+ Buat Soal</button>
+        </div>
+
+        <div id="form-tambah-soal" class="hidden" style="background: var(--light); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <div class="input-group">
+                <label>Teks Soal / Instruksi (Bisa format LaTeX $...$)</label>
+                <textarea id="add-soal-teks" rows="3" placeholder="Contoh: Titik $A(1,2)$ ditranslasi..."></textarea>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <!-- Setup Tier 1 -->
+                <div>
+                    <label style="font-size: 12px; font-weight: bold; color: var(--navy);">Tier 1: Opsi Jawaban (Pisahkan dgn Koma)</label>
+                    <input type="text" id="add-t1-opsi" class="input-group input" placeholder="(1,2), (3,4), (-1,5)">
+                    <label style="font-size: 12px; font-weight: bold; color: var(--green); margin-top: 5px;">Jawaban Benar T1 (Harus persis ketikannya)</label>
+                    <input type="text" id="add-t1-benar" class="input-group input" placeholder="(1,2)">
+                </div>
+                <!-- Setup Tier 2 -->
+                <div>
+                    <label style="font-size: 12px; font-weight: bold; color: var(--navy);">Tier 2: Opsi Alasan (Pisahkan dgn Koma)</label>
+                    <input type="text" id="add-t2-opsi" class="input-group input" placeholder="Ditambah matriks, Dikurang matriks, Dikali silang">
+                    <label style="font-size: 12px; font-weight: bold; color: var(--green); margin-top: 5px;">Alasan Benar T2 (Harus persis ketikannya)</label>
+                    <input type="text" id="add-t2-benar" class="input-group input" placeholder="Ditambah matriks">
+                </div>
+            </div>
+            <button class="btn-main" style="margin-top: 15px;" onclick="simpanSoalBaru()">Simpan ke Bank Soal</button>
+        </div>
+
+        <div style="overflow-x: auto;">
+            <table class="data-table">
+                <thead><tr><th>No</th><th>Cuplikan Soal</th><th>Aksi</th></tr></thead>
+                <tbody id="guru-table-soal"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+<!-- ==========================================================================
+     MODUL SUPER ADMIN (ROOT SYSTEM)
+     ========================================================================== -->
+<div id="admin-dashboard" class="container-lg hidden">
+    <div class="card" style="border-top: 4px solid var(--navy);">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--light); padding-bottom: 15px; margin-bottom: 20px;">
+            <h2 style="margin: 0;">Panel Super Admin Web</h2>
+            <button class="btn-danger" onclick="location.reload()">Logout Root</button>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <!-- Akun Guru Manager -->
+            <div>
+                <h3>Database Akun Guru</h3>
+                <div style="background: var(--light); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <input type="text" id="add-guru-user" placeholder="Username Guru Baru" style="width: 100%; padding: 8px; margin-bottom: 8px; border:1px solid #ccc; border-radius:4px;">
+                    <input type="text" id="add-guru-pass" placeholder="Password Guru Baru" style="width: 100%; padding: 8px; margin-bottom: 8px; border:1px solid #ccc; border-radius:4px;">
+                    <input type="text" id="add-guru-kelas" placeholder="Kelas Ajar (Pisahkan koma: XI-A, XI-B)" style="width: 100%; padding: 8px; margin-bottom: 8px; border:1px solid #ccc; border-radius:4px;">
+                    <button class="btn-success" style="width: 100%;" onclick="tambahAkunGuru()">+ Tambah Guru</button>
+                </div>
+                <table class="data-table">
+                    <thead><tr><th>Username</th><th>Kelas Ajar</th><th>Aksi</th></tr></thead>
+                    <tbody id="admin-table-guru"></tbody>
+                </table>
+            </div>
+
+            <!-- Kelas & Master Reset -->
+            <div>
+                <h3>Database Kelas Terdaftar</h3>
+                <div style="background: var(--light); padding: 15px; border-radius: 8px; margin-bottom: 15px; display: flex; gap: 10px;">
+                    <input type="text" id="add-kelas-nama" placeholder="Nama Kelas (Cth: XI-MIPA 1)" style="flex: 1; padding: 8px; border:1px solid #ccc; border-radius:4px;">
+                    <button class="btn-success" onclick="tambahKelas()">+ Kelas</button>
+                </div>
+                <div id="admin-list-kelas" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 30px;"></div>
+
+                <div style="background: #fef2f2; border: 1px solid #fecaca; padding: 20px; border-radius: 8px; text-align: center;">
+                    <h3 style="color: var(--red); margin-top: 0;">MASTER RESET SYSTEM</h3>
+                    <p style="font-size: 13px; color: #666; margin-bottom: 15px;">Hapus seluruh data ujian siswa, riwayat, soal kustom, dan reset ke pengaturan awal pabrik.</p>
+                    <button class="btn-danger" style="width: 100%; padding: 12px; font-size: 16px;" onclick="masterReset()">⚠️ FORMAT DATABASE WEBSITE</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ==========================================================================
+     LOGIKA SYSTEM & DATA LOCALSTORAGE (JAVASCRIPT)
+     ========================================================================== -->
+<script>
+    // --- 1. INISIALISASI DATABASE LOKAL BROWSER ---
+    const defaultData = {
+        guru: [{ username: 'guru', password: 'guru123', kelas: ['XI-A', 'XI-B', 'XI-C'] }],
+        kelas: ['XI-A', 'XI-B', 'XI-C'],
+        token: { string: 'GEOM1', aktif: true },
+        soal: [
+            {
+                id: 1,
+                soal: "Titik \\(A(3, 5)\\) dicerminkan terhadap garis \\(x = 2\\). Tentukan koordinat bayangan titik \\(A'\\)!",
+                t1Options: ["\\(A'(1, 5)\\)", "\\(A'(4, 5)\\)", "\\(A'(-1, 5)\\)"],
+                t1Benar: "\\(A'(1, 5)\\)",
+                t2Options: ["Rumus refleksi \\(x=h\\) adalah \\((2h-x, y)\\)", "Ditambah koordinat cermin \\((x+h, y)\\)", "Absis otomatis negatif"],
+                t2Benar: "Rumus refleksi \\(x=h\\) adalah \\((2h-x, y)\\)"
+            }
+        ]
+    };
+
+    function getDB(key) { return JSON.parse(localStorage.getItem(key)) || defaultData[key] || []; }
+    function setDB(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+
+    // Setup awal jika DB kosong
+    if(!localStorage.getItem('guru')) setDB('guru', defaultData.guru);
+    if(!localStorage.getItem('kelas')) setDB('kelas', defaultData.kelas);
+    if(!localStorage.getItem('token')) setDB('token', defaultData.token);
+    if(!localStorage.getItem('soal')) setDB('soal', defaultData.soal);
+
+    // Populate dropdown kelas di form siswa
+    const kelasSelect = document.getElementById('siswa-kelas');
+    getDB('kelas').forEach(k => {
+        kelasSelect.innerHTML += `<option value="${k}">${k}</option>`;
+    });
+
+
+    // --- 2. SWITCHER ROLE / HALAMAN ---
+    function switchRole(role) {
+        document.getElementById('tab-siswa').classList.toggle('active', role === 'siswa');
+        document.getElementById('tab-guru').classList.toggle('active', role === 'guru');
+        document.getElementById('tab-admin').classList.toggle('active', role === 'admin');
+        
+        document.getElementById('form-siswa').classList.toggle('hidden', role !== 'siswa');
+        document.getElementById('form-guru').classList.toggle('hidden', role !== 'guru');
+        document.getElementById('form-admin').classList.toggle('hidden', role !== 'admin');
+    }
+
+
+    // --- 3. ALUR SISWA (ANTI CHEAT & KUIS 3-TIER) ---
+    let currentSiswa = null;
+    let currentSoalIdx = 0;
+    let jawabanSiswaArr = [];
+
+    // Matikan Klik Kanan
+    document.addEventListener('contextmenu', e => e.preventDefault());
+
+    // Deteksi Pindah Tab (Anti Cheat)
+    document.addEventListener('visibilitychange', () => {
+        if(!document.getElementById('siswa-quiz').classList.contains('hidden') && document.hidden) {
+            currentSiswa.warnings += 1;
+            document.getElementById('quiz-warning').innerText = `Pelanggaran: ${currentSiswa.warnings}/3`;
+            
+            if(currentSiswa.warnings >= 3) {
+                currentSiswa.status = 'Terkunci';
+                setDB('siswa_' + currentSiswa.nisn, currentSiswa);
+                document.getElementById('siswa-quiz').classList.add('hidden');
+                document.getElementById('siswa-locked').classList.remove('hidden');
+            } else {
+                setDB('siswa_' + currentSiswa.nisn, currentSiswa);
+                alert(`Peringatan ${currentSiswa.warnings}/3: Jangan pindah tab/aplikasi saat ujian!`);
+            }
+        }
+    });
+
+    function loginSiswa() {
+        const nama = document.getElementById('siswa-nama').value.trim();
+        const nisn = document.getElementById('siswa-nisn').value.trim();
+        const kelas = document.getElementById('siswa-kelas').value;
+        const inputToken = document.getElementById('siswa-token').value.trim();
+        const tokenDb = getDB('token');
+
+        if(!nama || !nisn || !inputToken) return alert("Lengkapi semua data!");
+        if(!tokenDb.aktif || inputToken !== tokenDb.string) return alert("Token salah atau sedang dinonaktifkan guru!");
+
+        const existingSiswa = getDB('siswa_' + nisn);
+        if(existingSiswa.status === 'Selesai') return alert("Anda sudah menyelesaikan ujian ini!");
+        if(existingSiswa.status === 'Terkunci') {
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('main-wrapper').classList.remove('container-sm'); // Reset width 
+            document.getElementById('main-wrapper').classList.add('container-sm');
+            document.getElementById('siswa-locked').classList.remove('hidden');
+            return;
+        }
+
+        // Init Siswa Baru atau Lanjut
+        currentSiswa = existingSiswa.nisn ? existingSiswa : { nama, nisn, kelas, warnings: 0, status: 'Mengerjakan', progres: 0 };
+        currentSoalIdx = currentSiswa.progres;
+        jawabanSiswaArr = getDB('ans_' + nisn) || [];
+        setDB('siswa_' + nisn, currentSiswa);
+
+        document.getElementById('auth-screen').classList.add('hidden');
+        document.getElementById('siswa-quiz').classList.remove('hidden');
+        muatSoal();
+    }
+
+    function muatSoal() {
+        const bank = getDB('soal');
+        if(currentSoalIdx >= bank.length) return prosesHasilAkhir();
+
+        const soalAct = bank[currentSoalIdx];
+        document.getElementById('quiz-progress').innerText = `Soal ${currentSoalIdx + 1} dari ${bank.length}`;
+        document.getElementById('question-text').innerHTML = soalAct.soal;
+
+        const t1 = document.getElementById('tier1-options');
+        t1.innerHTML = '';
+        soalAct.t1Options.forEach(opt => {
+            t1.innerHTML += `<label class="radio-option"><input type="radio" name="t1" value="${opt}" onchange="validateTier()"> ${opt}</label>`;
+        });
+
+        const t2 = document.getElementById('tier2-options');
+        t2.innerHTML = '';
+        soalAct.t2Options.forEach(opt => {
+            t2.innerHTML += `<label class="radio-option"><input type="radio" name="t2" value="${opt}" onchange="validateTier()"> ${opt}</label>`;
+        });
+
+        document.querySelectorAll('input[name="t3"]').forEach(r => r.checked = false);
+        document.getElementById('btn-next-soal').disabled = true;
+
+        if (window.MathJax) MathJax.typesetPromise();
+    }
+
+    function validateTier() {
+        const t1 = document.querySelector('input[name="t1"]:checked');
+        const t2 = document.querySelector('input[name="t2"]:checked');
+        const t3 = document.querySelector('input[name="t3"]:checked');
+        document.getElementById('btn-next-soal').disabled = !(t1 && t2 && t3);
+    }
+
+    function nextSoal() {
+        const bank = getDB('soal');
+        const soalAct = bank[currentSoalIdx];
+        
+        const ans1 = document.querySelector('input[name="t1"]:checked').value;
+        const ans2 = document.querySelector('input[name="t2"]:checked').value;
+        const ans3 = document.querySelector('input[name="t3"]:checked').value;
+
+        // Cek Benar/Salah (Logika PRD)
+        const isT1Benar = (ans1 === soalAct.t1Benar);
+        const isT2Benar = (ans2 === soalAct.t2Benar);
+        const isYakin = (ans3 === 'yakin');
+
+        let diag = "Tidak Paham";
+        if (isT1Benar && isT2Benar && isYakin) diag = "Memahami Konsep";
+        else if (isT1Benar && isT2Benar && !isYakin) diag = "Memahami (Ragu)";
+        else if ((isT1Benar && !isT2Benar && isYakin) || (!isT1Benar && !isT2Benar && isYakin)) diag = "Miskonsepsi";
+        else if (!isT1Benar && isT2Benar && isYakin) diag = "Human Error (Teledor)";
+
+        jawabanSiswaArr.push({ no: currentSoalIdx+1, diag: diag });
+        setDB('ans_' + currentSiswa.nisn, jawabanSiswaArr);
+
+        currentSoalIdx++;
+        currentSiswa.progres = currentSoalIdx;
+        setDB('siswa_' + currentSiswa.nisn, currentSiswa);
+
+        muatSoal();
+    }
+
+    function prosesHasilAkhir() {
+        currentSiswa.status = 'Selesai';
+        setDB('siswa_' + currentSiswa.nisn, currentSiswa);
+        
+        document.getElementById('siswa-quiz').classList.add('hidden');
+        document.getElementById('siswa-result').classList.remove('hidden');
+
+        const content = document.getElementById('result-content');
+        content.innerHTML = '';
+        jawabanSiswaArr.forEach(j => {
+            let color = "var(--dark)";
+            if(j.diag.includes('Memahami Konsep')) color = "var(--green)";
+            if(j.diag.includes('Miskonsepsi')) color = "var(--red)";
+            content.innerHTML += `
+                <div class="result-item">
+                    <p style="margin:0; font-size:12px; color:#666;">Soal ${j.no}</p>
+                    <p style="margin:5px 0 0 0; font-weight:bold; color:${color};">${j.diag}</p>
+                </div>
+            `;
+        });
+    }
+
+
+    // --- 4. ALUR GURU (DASHBOARD & MONITORING) ---
+    let loggedGuru = null;
+
+    function loginGuru() {
+        const u = document.getElementById('guru-user').value.trim();
+        const p = document.getElementById('guru-pass').value.trim();
+        const dbGuru = getDB('guru');
+
+        const matched = dbGuru.find(g => g.username === u && g.password === p);
+        if(!matched) return alert("Username/Password Guru salah!");
+
+        loggedGuru = matched;
+        document.getElementById('auth-screen').classList.add('hidden');
+        document.getElementById('main-wrapper').classList.remove('container-sm');
+        document.getElementById('guru-dashboard').classList.remove('hidden');
+
+        // Populate Filter Kelas berdasarkan otoritas guru
+        const filter = document.getElementById('guru-filter-kelas');
+        filter.innerHTML = `<option value="ALL">Semua Kelas Ajar</option>`;
+        matched.kelas.forEach(k => filter.innerHTML += `<option value="${k}">${k}</option>`);
+
+        renderLiveMonitor();
+        renderBankSoal();
+        
+        // Live auto-refresh listener (Jika siswa ujian di tab/hp lain)
+        window.addEventListener('storage', renderLiveMonitor);
+    }
+
+    function toggleToken() {
+        let t = getDB('token');
+        t.aktif = !t.aktif;
+        setDB('token', t);
+        renderLiveMonitor(); // Refresh UI
+    }
+
+    function renderLiveMonitor() {
+        if(!loggedGuru) return;
+        const filterK = document.getElementById('guru-filter-kelas').value;
+        const tbody = document.getElementById('guru-table-monitor');
+        tbody.innerHTML = '';
+
+        let totalSiswa = 0; let totalSelesai = 0; let totalKunci = 0;
+        const token = getDB('token');
+        
+        const tokenDisplay = document.getElementById('guru-token-display');
+        const btnToggle = document.getElementById('btn-toggle-token');
+        tokenDisplay.innerText = token.aktif ? token.string : "NONAKTIF";
+        tokenDisplay.style.color = token.aktif ? "var(--navy)" : "var(--red)";
+        btnToggle.innerText = token.aktif ? "Matikan Token" : "Aktifkan Token";
+        btnToggle.className = token.aktif ? "btn-danger" : "btn-success";
+
+        const totalSoal = getDB('soal').length;
+
+        // Loop all localStorage for siswa data
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key.startsWith('siswa_')) {
+                const s = JSON.parse(localStorage.getItem(key));
+                // Filter Otoritas Kelas Guru dan Dropdown
+                if (loggedGuru.kelas.includes(s.kelas) && (filterK === 'ALL' || s.kelas === filterK)) {
+                    totalSiswa++;
+                    if(s.status === 'Selesai') totalSelesai++;
+                    if(s.status === 'Terkunci') totalKunci++;
+
+                    let badge = 'bg-blue';
+                    if(s.status === 'Terkunci') badge = 'bg-red';
+                    if(s.status === 'Selesai') badge = 'bg-green';
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td><strong>${s.nama}</strong></td>
+                            <td>${s.nisn}</td>
+                            <td>${s.kelas}</td>
+                            <td>${s.status==='Selesai' ? 'Lengkap' : s.progres + '/' + totalSoal}</td>
+                            <td><span class="badge ${badge}">${s.status} ${s.status==='Terkunci'? '('+s.warnings+'/3)':''}</span></td>
+                            <td>${s.status === 'Terkunci' ? `<button onclick="unlockSiswa('${s.nisn}')" class="btn-success" style="font-size:10px; padding:4px 8px;">Unlock</button>` : '-'}</td>
+                        </tr>
+                    `;
+                }
+            }
+        }
+
+        document.getElementById('guru-stats').innerHTML = `
+            <div class="stat-box"><h4>Siswa Dipantau</h4><p>${totalSiswa}</p></div>
+            <div class="stat-box"><h4>Selesai Ujian</h4><p style="color:var(--green);">${totalSelesai}</p></div>
+            <div class="stat-box"><h4>Akun Terkunci</h4><p style="color:var(--red);">${totalKunci}</p></div>
+            <div class="stat-box"><h4>Total Butir Soal</h4><p>${totalSoal}</p></div>
+        `;
+    }
+
+    function unlockSiswa(nisn) {
+        let s = getDB('siswa_' + nisn);
+        s.status = 'Mengerjakan';
+        s.warnings = 0;
+        setDB('siswa_' + nisn, s);
+        renderLiveMonitor();
+        alert('Sesi siswa berhasil di-unlock!');
+    }
+
+    // CRUD Bank Soal
+    function renderBankSoal() {
+        const soalDb = getDB('soal');
+        const tbody = document.getElementById('guru-table-soal');
+        tbody.innerHTML = '';
+        soalDb.forEach((s, idx) => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${idx+1}</td>
+                    <td>${s.soal.substring(0, 50)}...</td>
+                    <td><button onclick="hapusSoal(${s.id})" class="btn-danger" style="font-size:10px; padding:4px 8px;">Hapus</button></td>
+                </tr>
+            `;
+        });
+        if (window.MathJax) MathJax.typesetPromise();
+    }
+
+    function simpanSoalBaru() {
+        const teks = document.getElementById('add-soal-teks').value.trim();
+        const t1Opsi = document.getElementById('add-t1-opsi').value.split(',').map(x=>x.trim());
+        const t1Benar = document.getElementById('add-t1-benar').value.trim();
+        const t2Opsi = document.getElementById('add-t2-opsi').value.split(',').map(x=>x.trim());
+        const t2Benar = document.getElementById('add-t2-benar').value.trim();
+
+        if(!teks || t1Opsi.length < 2 || !t1Benar || t2Opsi.length < 2 || !t2Benar) {
+            return alert("Lengkapi data soal dan opsi (minimal 2 opsi dipisah koma)!");
+        }
+
+        const db = getDB('soal');
+        db.push({
+            id: Date.now(),
+            soal: teks,
+            t1Options: t1Opsi,
+            t1Benar: t1Benar,
+            t2Options: t2Opsi,
+            t2Benar: t2Benar
+        });
+        setDB('soal', db);
+        alert("Soal berhasil ditambahkan ke Bank Soal!");
+        document.getElementById('form-tambah-soal').classList.add('hidden');
+        renderBankSoal();
+        renderLiveMonitor(); // update total soal
+    }
+
+    function hapusSoal(id) {
+        let db = getDB('soal');
+        if(db.length <= 1) return alert("Minimal harus tersisa 1 soal di Bank Soal!");
+        if(confirm("Yakin hapus soal ini?")) {
+            setDB('soal', db.filter(s => s.id !== id));
+            renderBankSoal();
+            renderLiveMonitor();
+        }
+    }
+
+
+    // --- 5. ALUR SUPER ADMIN (ROOT) ---
+    function loginAdmin() {
+        const p = document.getElementById('admin-pass').value;
+        if(p === 'admin123') {
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('main-wrapper').classList.remove('container-sm');
+            document.getElementById('admin-dashboard').classList.remove('hidden');
+            renderAdminDb();
+        } else {
+            alert("Password Root Salah!");
+        }
+    }
+
+    function renderAdminDb() {
+        // Table Guru
+        const dbG = getDB('guru');
+        const tbG = document.getElementById('admin-table-guru');
+        tbG.innerHTML = '';
+        dbG.forEach((g, idx) => {
+            tbG.innerHTML += `
+                <tr>
+                    <td><strong>${g.username}</strong></td>
+                    <td><span class="badge bg-blue">${g.kelas.join(', ')}</span></td>
+                    <td><button onclick="hapusGuru(${idx})" class="btn-danger" style="font-size:10px; padding:4px 8px;">Hapus</button></td>
+                </tr>
+            `;
+        });
+
+        // List Kelas
+        const dbK = getDB('kelas');
+        const divK = document.getElementById('admin-list-kelas');
+        divK.innerHTML = '';
+        dbK.forEach((k, idx) => {
+            divK.innerHTML += `<span class="badge bg-blue" style="font-size:13px; padding:6px 12px;">${k} <span style="cursor:pointer; color:#ffb;" onclick="hapusKelas(${idx})"> &times;</span></span>`;
+        });
+    }
+
+    function tambahAkunGuru() {
+        const u = document.getElementById('add-guru-user').value.trim();
+        const p = document.getElementById('add-guru-pass').value.trim();
+        const k = document.getElementById('add-guru-kelas').value.split(',').map(x=>x.trim());
+        if(!u || !p || !k[0]) return alert("Lengkapi data guru!");
+        
+        let db = getDB('guru');
+        db.push({ username: u, password: p, kelas: k });
+        setDB('guru', db);
+        renderAdminDb();
+    }
+
+    function hapusGuru(idx) {
+        let db = getDB('guru');
+        db.splice(idx, 1);
+        setDB('guru', db);
+        renderAdminDb();
+    }
+
+    function tambahKelas() {
+        const k = document.getElementById('add-kelas-nama').value.trim();
+        if(!k) return;
+        let db = getDB('kelas');
+        if(!db.includes(k)) db.push(k);
+        setDB('kelas', db);
+        renderAdminDb();
+    }
+
+    function hapusKelas(idx) {
+        let db = getDB('kelas');
+        db.splice(idx, 1);
+        setDB('kelas', db);
+        renderAdminDb();
+    }
+
+    function masterReset() {
+        if(confirm("PERINGATAN BAHAYA: Tindakan ini akan menghapus seluruh data kuis siswa, akun guru, dan bank soal! Anda yakin?")) {
+            localStorage.clear();
+            alert("Database berhasil diformat ke pengaturan awal.");
+            location.reload();
+        }
+    }
+</script>
+
+</body>
+</html>
